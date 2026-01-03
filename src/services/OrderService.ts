@@ -142,4 +142,66 @@ export class OrderService {
       }
       return order;
   }
+
+	async processPaymentSuccess(orderId: string) {
+    return prisma.$transaction(async (tx) => {
+      // Fetch Order & Idempotency Check
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: { items: true }
+      });
+
+      if (!order) throw new AppError(404, 'Order not found');
+
+      // Idempotency: If already paid, do nothing, return success
+      if (order.status === 'PAID') {
+        return order;
+      }
+
+      if (order.status === 'CANCELED') {
+        throw new AppError(400, 'Cannot pay for a cancelled order');
+      }
+
+      //  Deadlock Prevention: Sort items by Product ID
+      // This ensures we always acquire locks in the same order (A -> B -> C)
+      // preventing Circular Wait conditions.
+      const sortedItems = [...order.items].sort((a, b) => 
+        a.productId.localeCompare(b.productId)
+      );
+
+      // 3. Process Locking and Verification
+      for (const item of sortedItems) {
+        // Execute Raw SQL to force "SELECT ... FOR UPDATE" (Pessimistic Lock)
+        // This locks the row until the transaction commits or rolls back.
+        const products: any[] = await tx.$queryRaw`
+          SELECT id, stock FROM products 
+          WHERE id = ${item.productId} 
+          FOR UPDATE
+        `;
+
+        const product = products[0];
+
+        if (!product) {
+          throw new AppError(404, `Product ${item.productId} not found`);
+        }
+
+        // Verify Stock
+        if (product.stock < item.quantity) {
+          throw new AppError(409, `Insufficient stock for Product ${item.productId}`);
+        }
+
+        // Decrement Stock
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } }
+        });
+      }
+
+      // Mark Order as PAID
+      return tx.order.update({
+        where: { id: orderId },
+        data: { status: 'PAID' }
+      });
+    });
+  }
 }
