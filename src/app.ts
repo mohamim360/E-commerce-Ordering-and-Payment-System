@@ -5,6 +5,8 @@ import { authenticate, authorize } from "./middlewares/authMiddleware";
 import { errorHandler } from "./middlewares/errorHandler";
 import * as ProductController from './controllers/ProductController';
 import * as CategoryController from './controllers/CategoryController';
+import * as OrderController from './controllers/OrderController';
+
 
 const createApp = (): Application => {
 	const app = express();
@@ -30,6 +32,10 @@ app.get('/products/:id', ProductController.getProductById);
 // Category
 app.get('/products/:id/recommendations', CategoryController.getProductRecommendations);
 app.get('/categories/:id/subtree', CategoryController.getSubtree);
+
+app.post('/orders', authenticate, OrderController.createOrder);
+app.get('/orders', authenticate, OrderController.getOrders);
+app.get('/orders/:id', authenticate, OrderController.getOrderById);
 
 
 // Admin Only

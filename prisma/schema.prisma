@@ -15,7 +15,7 @@ datasource db {
 
 // ENUMS
 
-enum UserRole {
+enum Role {
   USER
   ADMIN
 }
@@ -31,165 +31,86 @@ enum OrderStatus {
   CANCELED
 }
 
-// USER MANAGEMENT
-
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  email     String   @unique @db.VarChar(255)
-  password  String   @db.VarChar(255)
-  name      String   @db.VarChar(100)
-  role      UserRole @default(USER)
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations - Users can view their own orders and payments
-  orders   Order[]
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // Hashed
+  name      String?
+  role      Role     @default(USER)
   
-  // Indexes for efficient querying
-  @@index([email])
-  @@index([role])
-  @@index([isActive])
+  // Relations
+  orders    Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@map("users")
 }
 
-// CATEGORY MANAGEMENT
-
 model Category {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @db.VarChar(100)
-  slug        String   @unique @db.VarChar(120)
-  description String?  @db.Text
-  imageUrl    String?  @map("image_url") @db.VarChar(500)
-  isActive    Boolean  @default(true) @map("is_active")
-  sortOrder   Int      @default(0) @map("sort_order")
-  depth       Int      @default(0) // For optimized DFS traversal
-  path        String   @default("") @db.VarChar(1000) // Materialized path for efficient queries
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Self-referencing for hierarchical relationships
-  parentId String?    @map("parent_id") @db.Uuid
-  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children Category[] @relation("CategoryHierarchy")
+  id        String   @id @default(uuid())
+  name      String
+  
+  // Self-Relation for Hierarchy (Tree)
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
 
   // Relations
-  products ProductCategory[]
+  products  Product[]
 
-  // Indexes for DFS traversal and efficient querying
-  @@index([parentId])
-  @@index([slug])
-  @@index([isActive])
-  @@index([path])
-  @@index([depth])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@map("categories")
 }
 
-
-// PRODUCT MANAGEMENT
 model Product {
-  id          String        @id @default(uuid()) @db.Uuid
-  name        String        @db.VarChar(255)
-  sku         String        @unique @db.VarChar(100) // SKU must be unique 
-  description String?       @db.Text
-  price       Decimal       @db.Decimal(12, 2)
-  stock       Int           @default(0)
-  status      ProductStatus @default(ACTIVE) // active/inactive
-  imageUrl    String?       @map("image_url") @db.VarChar(500)
-  metadata    Json?         // For extensibility
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  sku         String        @unique
+  price       Decimal       @db.Decimal(10, 2)
+  stock       Int
+  status      ProductStatus @default(ACTIVE)
 
   // Relations
-  categories ProductCategory[]
-  orderItems OrderItem[]
+  categoryId  String?
+  category    Category?     @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
 
-  // Indexes for efficient querying 
-  @@index([sku])
-  @@index([name])
-  @@index([status])
-  @@index([price])
-  @@index([stock])
-  @@index([createdAt])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
   @@map("products")
 }
 
-// table for Product-Category many-to-many relationship
-model ProductCategory {
-  id         String   @id @default(uuid()) @db.Uuid
-  productId  String   @map("product_id") @db.Uuid
-  categoryId String   @map("category_id") @db.Uuid
-  isPrimary  Boolean  @default(false) @map("is_primary")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, categoryId])
-  @@index([productId])
-  @@index([categoryId])
-  @@map("product_categories")
-}
-
-// ORDER MANAGEMENT 
-
 model Order {
-  id              String      @id @default(uuid()) @db.Uuid
-  orderNumber     String      @unique @map("order_number") @db.VarChar(50)
-  userId          String      @map("user_id") @db.Uuid
-  totalAmount     Decimal     @map("total_amount") @db.Decimal(12, 2)
-  subtotal        Decimal     @db.Decimal(12, 2)
-  taxAmount       Decimal     @default(0) @map("tax_amount") @db.Decimal(12, 2)
-  discountAmount  Decimal     @default(0) @map("discount_amount") @db.Decimal(12, 2)
-  status          OrderStatus @default(PENDING)  
-  notes           String?     @db.Text
-  shippingAddress Json?       @map("shipping_address")
-  billingAddress  Json?       @map("billing_address")
-  metadata        Json?       
-  paidAt          DateTime?   @map("paid_at")
-  canceledAt      DateTime?   @map("canceled_at")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
+  id          String      @id @default(uuid())
+  totalAmount Decimal     @db.Decimal(10, 2)
+  status      OrderStatus @default(PENDING)
+  
+  // Relations
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
 
-  // Relations - Orders belong to users 
-  user     User        @relation(fields: [userId], references: [id], onDelete: Restrict)
-  items    OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  // Indexes for efficient querying 
-  @@index([userId])
-  @@index([orderNumber])
-  @@index([status])
-  @@index([createdAt])
-  @@index([paidAt])
   @@map("orders")
 }
 
-// ORDER ITEMS 
-
 model OrderItem {
-  id        String  @id @default(uuid()) @db.Uuid
-  orderId   String  @map("order_id") @db.Uuid
-  productId String  @map("product_id") @db.Uuid
+  id        String  @id @default(uuid())
   quantity  Int
-  price     Decimal @db.Decimal(12, 2) // Price at time of purchase
-  subtotal  Decimal @db.Decimal(12, 2) // quantity * price 
+  price     Decimal @db.Decimal(10, 2) // Snapshot of price at time of order
 
-  // Snapshot of product details at time of order
-  productName String  @map("product_name") @db.VarChar(255)
-  productSku  String  @map("product_sku") @db.VarChar(100)
-  metadata    Json?   
+  // Relations
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations - An order consists of multiple products 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-
-  // Indexes for efficient querying 
-  @@index([orderId])
-  @@index([productId])
   @@map("order_items")
 }
-
-
