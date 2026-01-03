@@ -3,6 +3,7 @@ import cors from 'cors';
 import { getAllUsers, getMe, login, register } from "./controllers/AuthController";
 import { authenticate, authorize } from "./middlewares/authMiddleware";
 import { errorHandler } from "./middlewares/errorHandler";
+import * as ProductController from './controllers/ProductController';
 
 const createApp = (): Application => {
 	const app = express();
@@ -21,8 +22,32 @@ app.post('/auth/login', login);
 // Protected
 app.get('/users/me', authenticate, getMe);
 
+// Product 
+app.get('/products', ProductController.getProducts);
+app.get('/products/:id', ProductController.getProductById);
+
 // Admin Only
 app.get('/admin/users', authenticate, authorize(['ADMIN']), getAllUsers);
+app.post(
+  '/products', 
+  authenticate, 
+  authorize(['ADMIN']), 
+  ProductController.createProduct
+);
+
+app.put(
+  '/products/:id', 
+  authenticate, 
+  authorize(['ADMIN']), 
+  ProductController.updateProduct
+);
+
+app.delete(
+  '/products/:id', 
+  authenticate, 
+  authorize(['ADMIN']), 
+  ProductController.deleteProduct
+);
 
 // Error Handling 
 app.use(errorHandler);
