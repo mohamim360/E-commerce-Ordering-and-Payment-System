@@ -9,4 +9,5 @@ export const config = {
 	JWT_SECRET: process.env.JWT_SECRET as string,
 	JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN as string,
 	SALT_ROUNDS: Number(process.env.SALT_ROUNDS) || 12,
+	
 };

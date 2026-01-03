@@ -4,6 +4,7 @@ import { getAllUsers, getMe, login, register } from "./controllers/AuthControlle
 import { authenticate, authorize } from "./middlewares/authMiddleware";
 import { errorHandler } from "./middlewares/errorHandler";
 import * as ProductController from './controllers/ProductController';
+import * as CategoryController from './controllers/CategoryController';
 
 const createApp = (): Application => {
 	const app = express();
@@ -25,6 +26,11 @@ app.get('/users/me', authenticate, getMe);
 // Product 
 app.get('/products', ProductController.getProducts);
 app.get('/products/:id', ProductController.getProductById);
+
+// Category
+app.get('/products/:id/recommendations', CategoryController.getProductRecommendations);
+app.get('/categories/:id/subtree', CategoryController.getSubtree);
+
 
 // Admin Only
 app.get('/admin/users', authenticate, authorize(['ADMIN']), getAllUsers);
@@ -48,6 +54,9 @@ app.delete(
   authorize(['ADMIN']), 
   ProductController.deleteProduct
 );
+
+app.post('/categories', authenticate, authorize(['ADMIN']), CategoryController.createCategory);
+
 
 // Error Handling 
 app.use(errorHandler);
