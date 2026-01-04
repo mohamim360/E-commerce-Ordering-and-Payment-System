@@ -1,7 +1,6 @@
 import { Prisma, Product } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma";
 
-
 export class ProductRepository {
   async create(data: Prisma.ProductCreateInput): Promise<Product> {
     return prisma.product.create({ data });
@@ -15,13 +14,13 @@ export class ProductRepository {
     return prisma.product.findUnique({ where: { sku } });
   }
 
-  // Return data + total count for pagination 
+  // Return data + total count for pagination
   async findAll(skip: number, take: number) {
     const [products, total] = await prisma.$transaction([
       prisma.product.findMany({
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       prisma.product.count(),
     ]);

@@ -8,18 +8,21 @@ export class CategoryRepository {
 
   async findAll(): Promise<{ id: string; parentId: string | null }[]> {
     return prisma.category.findMany({
-      select: { id: true, parentId: true }
-    });
-  }
-  
-  async findById(id: string): Promise<Category | null> {
-    return prisma.category.findUnique({ 
-      where: { id },
-      include: { children: true } 
+      select: { id: true, parentId: true },
     });
   }
 
-  async update(id: string, data: Prisma.CategoryUpdateInput): Promise<Category> {
+  async findById(id: string): Promise<Category | null> {
+    return prisma.category.findUnique({
+      where: { id },
+      include: { children: true },
+    });
+  }
+
+  async update(
+    id: string,
+    data: Prisma.CategoryUpdateInput
+  ): Promise<Category> {
     return prisma.category.update({ where: { id }, data });
   }
 

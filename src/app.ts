@@ -1,77 +1,116 @@
 import express, { Application } from "express";
-import cors from 'cors';
-import { getAllUsers, getMe, login, register } from "./controllers/AuthController";
+import cors from "cors";
+import {
+  getAllUsers,
+  getMe,
+  login,
+  register,
+} from "./controllers/AuthController";
 import { authenticate, authorize } from "./middlewares/authMiddleware";
 import { errorHandler } from "./middlewares/errorHandler";
-import * as ProductController from './controllers/ProductController';
-import * as CategoryController from './controllers/CategoryController';
-import * as OrderController from './controllers/OrderController';
-
+import * as ProductController from "./controllers/ProductController";
+import * as CategoryController from "./controllers/CategoryController";
+import * as OrderController from "./controllers/OrderController";
+import * as PaymentController from "./controllers/PaymentController";
 
 const createApp = (): Application => {
-	const app = express();
+  const app = express();
 
-	app.use(cors())
-	app.use(express.json());
-	app.use(express.urlencoded({
-		extended: true
-	}))
+  app.use(cors());
 
-	// Routes
-// Public
-app.post('/auth/register', register);
-app.post('/auth/login', login);
+  // Routes
+  app.post(
+    "/webhooks/stripe",
+    express.raw({ type: "application/json" }),
+    PaymentController.handleStripeWebhook
+  );
 
-// Protected
-app.get('/users/me', authenticate, getMe);
+  app.use(express.json());
+  app.use(
+    express.urlencoded({
+      extended: true,
+    })
+  );
+  // Public
+  app.post("/auth/register", register);
+  app.post("/auth/login", login);
 
-// Product 
-app.get('/products', ProductController.getProducts);
-app.get('/products/:id', ProductController.getProductById);
+  // Protected
+  app.get("/users/me", authenticate, getMe);
 
-// Category
-app.get('/products/:id/recommendations', CategoryController.getProductRecommendations);
-app.get('/categories/:id/subtree', CategoryController.getSubtree);
+  // Product
+  app.get("/products", ProductController.getProducts);
+  app.get("/products/:id", ProductController.getProductById);
 
-app.post('/orders', authenticate, OrderController.createOrder);
-app.get('/orders', authenticate, OrderController.getOrders);
-app.get('/orders/:id', authenticate, OrderController.getOrderById);
+  // Category
+  app.get(
+    "/products/:id/recommendations",
+    CategoryController.getProductRecommendations
+  );
+  app.get("/categories/:id/subtree", CategoryController.getSubtree);
 
+  app.post("/orders", authenticate, OrderController.createOrder);
+  app.get("/orders", authenticate, OrderController.getOrders);
+  app.get("/orders/:id", authenticate, OrderController.getOrderById);
 
-// Admin Only
-app.get('/admin/users', authenticate, authorize(['ADMIN']), getAllUsers);
-app.post(
-  '/products', 
-  authenticate, 
-  authorize(['ADMIN']), 
-  ProductController.createProduct
-);
+  //Payment
+  app.post(
+    "/payments/checkout",
+    authenticate,
+    PaymentController.initiateCheckout
+  );
 
-app.put(
-  '/products/:id', 
-  authenticate, 
-  authorize(['ADMIN']), 
-  ProductController.updateProduct
-);
+  app.post(
+    "/api/v1/payments/bkash/execute",
+    authenticate,
+    PaymentController.executeBkashPayment
+  );
 
-app.delete(
-  '/products/:id', 
-  authenticate, 
-  authorize(['ADMIN']), 
-  ProductController.deleteProduct
-);
+  // bKash Query Endpoint
+  app.get(
+    "/api/v1/payments/bkash/query/:transactionId",
+    authenticate,
+    PaymentController.queryBkashPayment
+  );
 
-app.post('/categories', authenticate, authorize(['ADMIN']), CategoryController.createCategory);
+  // Admin Only
+  app.get("/admin/users", authenticate, authorize(["ADMIN"]), getAllUsers);
+  app.post(
+    "/products",
+    authenticate,
+    authorize(["ADMIN"]),
+    ProductController.createProduct
+  );
 
+  app.put(
+    "/products/:id",
+    authenticate,
+    authorize(["ADMIN"]),
+    ProductController.updateProduct
+  );
 
-// Error Handling 
-app.use(errorHandler);
+  app.delete(
+    "/products/:id",
+    authenticate,
+    authorize(["ADMIN"]),
+    ProductController.deleteProduct
+  );
 
-	app.use('/', (req,res) => {
-		res.send('Hello World');
-	})
-	
-	return app;
-}
+  app.post(
+    "/categories",
+    authenticate,
+    authorize(["ADMIN"]),
+    CategoryController.createCategory
+  );
 
-export const app = createApp()
+  // Error Handling
+  app.use(errorHandler);
+
+  app.use("/", (req, res) => {
+    res.send("Hello World");
+  });
+
+  return app;
+};
+
+export const app = createApp();

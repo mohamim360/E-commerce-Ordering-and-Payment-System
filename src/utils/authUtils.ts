@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
-import { User } from "../generated/prisma/client";
 import { config } from "../config";
+import { User } from "../generated/prisma/client";
 
 export const hashPassword = async (password: string): Promise<string> => {
   return bcrypt.hash(password, config.SALT_ROUNDS);
@@ -23,5 +23,5 @@ export const generateToken = (user: User): string => {
 };
 
 export const verifyToken = (token: string): any => {
-  return jwt.verify(token, config.JWT_SECRET as string)
+  return jwt.verify(token, config.JWT_SECRET as string);
 };

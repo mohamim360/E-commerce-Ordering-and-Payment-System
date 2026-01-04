@@ -31,15 +31,26 @@ enum OrderStatus {
   CANCELED
 }
 
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum PaymentProvider {
+  STRIPE
+  BKASH
+}
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // Hashed
-  name      String?
-  role      Role     @default(USER)
-  
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String // Hashed
+  name     String?
+  role     Role    @default(USER)
+
   // Relations
-  orders    Order[]
+  orders Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -48,16 +59,16 @@ model User {
 }
 
 model Category {
-  id        String   @id @default(uuid())
-  name      String
-  
+  id   String @id @default(uuid())
+  name String
+
   // Self-Relation for Hierarchy (Tree)
-  parentId  String?
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryHierarchy")
+  parentId String?
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
 
   // Relations
-  products  Product[]
+  products Product[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -75,12 +86,12 @@ model Product {
   status      ProductStatus @default(ACTIVE)
 
   // Relations
-  categoryId  String?
-  category    Category?     @relation(fields: [categoryId], references: [id])
-  orderItems  OrderItem[]
+  categoryId String?
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("products")
 }
@@ -89,22 +100,24 @@ model Order {
   id          String      @id @default(uuid())
   totalAmount Decimal     @db.Decimal(10, 2)
   status      OrderStatus @default(PENDING)
-  
-  // Relations
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  items       OrderItem[]
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  // Relations
+  userId String
+  user   User        @relation(fields: [userId], references: [id])
+  items  OrderItem[]
+
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("orders")
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  quantity  Int
-  price     Decimal @db.Decimal(10, 2) // Snapshot of price at time of order
+  id       String  @id @default(uuid())
+  quantity Int
+  price    Decimal @db.Decimal(10, 2) // Snapshot of price at time of order
 
   // Relations
   orderId   String
@@ -113,4 +126,22 @@ model OrderItem {
   product   Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+model Payment {
+  id            String          @id @default(uuid())
+  amount        Decimal         @db.Decimal(10, 2)
+  currency      String          @default("USD")
+  provider      PaymentProvider
+  transactionId String?         @unique
+  status        PaymentStatus   @default(PENDING)
+  rawResponse   Json? // Stores full provider response for audit
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payments")
 }
