@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
     "outDir": "./dist",
-    "baseUrl": "./src",
-    "paths": {
-      "*": ["*", "../generated/*"]
-    },
+    "baseUrl": ".",
 
     "target": "ES2020",
     "module": "CommonJS",
@@ -18,6 +14,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "generated/**/*"],
   "exclude": ["node_modules", "dist"]
 }
