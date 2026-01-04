@@ -4,8 +4,8 @@ import { IPaymentStrategy } from "../strategies/PaymentStrategy";
 import { OrderService } from "./OrderService";
 import { AppError } from "../middlewares/errorHandler";
 import { prisma } from "../lib/prisma";
-import { PaymentProvider } from "../generated/prisma/enums";
-import { Prisma } from "../generated/prisma/client";
+import { PaymentProvider } from "../../generated/prisma/enums";
+import { Prisma } from "../../generated/prisma/client";
 
 export class PaymentService {
   private orderService = new OrderService();

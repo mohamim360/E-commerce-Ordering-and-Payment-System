@@ -1,4 +1,4 @@
-import { Order, Payment, User } from "../generated/prisma/client";
+import { Order, Payment, User } from "../../generated/prisma/client";
 
 export interface PaymentInitiationResult {
   transactionId: string;

@@ -5,7 +5,7 @@ import {
   WebhookResult,
 } from "./PaymentStrategy";
 import Stripe from "stripe";
-import { Order, Payment, User } from "../generated/prisma/client";
+import { Order, Payment, User } from "../../generated/prisma/client";
 
 export class StripeProvider implements IPaymentStrategy {
   private stripe: Stripe;

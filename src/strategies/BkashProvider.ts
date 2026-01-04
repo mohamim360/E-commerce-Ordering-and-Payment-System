@@ -5,7 +5,7 @@ import {
   WebhookResult,
 } from "./PaymentStrategy";
 import { AppError } from "../middlewares/errorHandler";
-import { Order, Payment, User } from "../generated/prisma/client";
+import { Order, Payment, User } from "../../generated/prisma/client";
 import axios from "axios";
 
 export class BkashProvider implements IPaymentStrategy {

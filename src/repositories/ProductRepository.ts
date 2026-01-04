@@ -1,4 +1,4 @@
-import { Prisma, Product } from "../generated/prisma/client";
+import { Prisma, Product } from "../../generated/prisma/client";
 import { prisma } from "../lib/prisma";
 
 export class ProductRepository {
@@ -24,7 +24,7 @@ export class ProductRepository {
       }),
       prisma.product.count(),
     ]);
-  
+
     return { products, total };
   }
 

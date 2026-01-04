@@ -1,4 +1,4 @@
-import { Prisma, User } from "../generated/prisma/client";
+import { Prisma, User } from "../../generated/prisma/client";
 import { prisma } from "../lib/prisma";
 
 export class UserRepository {
