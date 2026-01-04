@@ -1,0 +1,39 @@
+# Backend .dockerignore
+# Place this in ecommerce-backend/.dockerignore
+
+node_modules
+dist
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+README.md
+.vscode
+.idea
+*.md
+
+---
+
+# Frontend .dockerignore
+# Place this in ecommerce-frontend/.dockerignore
+
+node_modules
+.next
+.git
+.gitignore
+README.md
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.*
+!.env.example
+.vscode
+.idea
+*.md
+out
+build
