@@ -98,6 +98,8 @@ model Product {
 
 model Order {
   id          String      @id @default(uuid())
+  orderNumber String      @unique
+  subtotal    Decimal     @db.Decimal(10, 2)
   totalAmount Decimal     @db.Decimal(10, 2)
   status      OrderStatus @default(PENDING)
 
@@ -115,11 +117,13 @@ model Order {
 }
 
 model OrderItem {
-  id       String  @id @default(uuid())
-  quantity Int
-  price    Decimal @db.Decimal(10, 2) // Snapshot of price at time of order
+  id          String  @id @default(uuid())
+  quantity    Int
+  price       Decimal @db.Decimal(10, 2)
+  subtotal    Decimal @db.Decimal(10, 2)
+  productName String
+  productSku  String
 
-  // Relations
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id])
   productId String
@@ -127,6 +131,7 @@ model OrderItem {
 
   @@map("order_items")
 }
+
 
 model Payment {
   id            String          @id @default(uuid())

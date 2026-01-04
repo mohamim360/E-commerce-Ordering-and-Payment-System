@@ -16,7 +16,7 @@ export class ProductRepository {
 
   // Return data + total count for pagination
   async findAll(skip: number, take: number) {
-    const [products, total] = await prisma.$transaction([
+    const [products, total] = await Promise.all([
       prisma.product.findMany({
         skip,
         take,
@@ -24,6 +24,7 @@ export class ProductRepository {
       }),
       prisma.product.count(),
     ]);
+  
     return { products, total };
   }
 

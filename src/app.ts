@@ -18,19 +18,30 @@ const createApp = (): Application => {
 
   app.use(cors());
 
-  // Routes
+  // IMPORTANT: Stripe webhook MUST come before express.json()
+  // because it needs the raw body as a Buffer
   app.post(
     "/webhooks/stripe",
     express.raw({ type: "application/json" }),
     PaymentController.handleStripeWebhook
   );
 
+  // Now apply JSON parser for all other routes
   app.use(express.json());
   app.use(
     express.urlencoded({
       extended: true,
     })
   );
+
+  // Debug middleware to check if body is being parsed
+  app.use((req, res, next) => {
+    console.log(`[DEBUG] ${req.method} ${req.path}`);
+    console.log('[DEBUG] Headers:', req.headers);
+    console.log('[DEBUG] Body:', req.body);
+    next();
+  });
+
   // Public
   app.post("/auth/register", register);
   app.post("/auth/login", login);
@@ -103,12 +114,13 @@ const createApp = (): Application => {
     CategoryController.createCategory
   );
 
-  // Error Handling
-  app.use(errorHandler);
-
-  app.use("/", (req, res) => {
+  // Catch-all route 
+  app.get("/", (req, res) => {
     res.send("Hello World");
   });
+
+  // Error Handling 
+  app.use(errorHandler);
 
   return app;
 };

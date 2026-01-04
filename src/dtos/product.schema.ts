@@ -7,6 +7,8 @@ export const createProductSchema = z.object({
   price: z.number().min(0, "Price must be >= 0"),
   stock: z.number().int().min(0, "Stock must be >= 0"),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  categoryId: z.string().uuid().optional()
+
 });
 
 export const updateProductSchema = createProductSchema.partial();
