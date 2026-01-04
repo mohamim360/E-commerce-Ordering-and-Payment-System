@@ -11,10 +11,13 @@ export const initiateCheckout = async (req: Request, res: Response, next: NextFu
 
     const result = await paymentService.initializePayment(userId, orderId, provider);
     
-    // Send client_secret (in rawResponse) to frontend for Stripe Elements
+    // Type-safe access to client_secret from rawResponse
+    const rawResponse = result.payment.rawResponse as any;
+    const clientSecret = rawResponse?.client_secret;
+    
     res.status(201).json({
       paymentId: result.payment.id,
-      clientSecret: result.payment.rawResponse?.['client_secret'], 
+      clientSecret, 
       ...result 
     });
   } catch (error) {
